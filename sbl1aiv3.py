@@ -1,5 +1,6 @@
 import pandas as pd
 from collections import defaultdict, Counter
+import matplotlib.pyplot as plt
 
 def load_data(file_path):
     data = []
@@ -34,10 +35,18 @@ def calculate_sda(df):
 
     return sda_scores
 
-def display_all_receivers(sda_scores):
+def display_and_plot_scores(sda_scores):
     for sender in sorted(sda_scores):
         print(f"Sender {sender} communication probabilities:")
         sorted_receivers = sorted(sda_scores[sender].items(), key=lambda item: item[1], reverse=True)
+        receivers, scores = zip(*sorted_receivers)
+        plt.figure(figsize=(10, 5))
+        plt.bar(receivers, scores, color='skyblue')
+        plt.xlabel('Receiver')
+        plt.ylabel('SDA Score')
+        plt.title(f'SDA Communication Probabilities for Sender {sender}')
+        plt.ylim(-0.25, 1)  # Set y-axis limits to be consistent across all plots
+        plt.show()
         for receiver, score in sorted_receivers:
             print(f"  Receiver {receiver}: {score:.4f}")
         print("")
@@ -46,7 +55,8 @@ def main():
     file_path = r"C:\Users\manue\Downloads\observation_mix.txt"
     df = load_data(file_path)
     sda_scores = calculate_sda(df)
-    display_all_receivers(sda_scores)
+    display_and_plot_scores(sda_scores)
 
 if __name__ == "__main__":
     main()
+
