@@ -1,5 +1,6 @@
 import pandas as pd
-from collections import defaultdict
+from collections import defaultdict, Counter
+import itertools
 
 def load_data(file_path):
     data = []
@@ -8,40 +9,45 @@ def load_data(file_path):
             parts = line.strip().split(' : ')
             senders = list(map(int, parts[0].split()))
             receivers = list(map(int, parts[1].split()))
-            data.append(senders + receivers)
-    return pd.DataFrame(data, columns=["S1", "S2", "S3", "S4", "R1", "R2", "R3", "R4"])
+            data.append((senders, receivers))
+    return data
 
-def minimal_hitting_set(df):
-    sender_batches = defaultdict(list)
+def exact_hs(observations, m, C=set()):
+    if not observations:
+        return [C]
+    if m < 1:
+        return []
+    
+    B = observations[0]
+    H = []
+    for r in B:
+        new_obs = [obs for obs in observations if r not in obs]
+        new_C = C | {r}
+        H += exact_hs(new_obs, m - 1, new_C)
+    
+    return H
 
-    for _, row in df.iterrows():
-        senders = set(row[:4])
-        receivers = set(row[4:])
-        for sender in senders:
-            sender_batches[sender].append(receivers)
+def calculate_exact_hs(data, sender):
+    sender_observations = [set(receivers) for senders, receivers in data if sender in senders]
+    m = 1
+    hitting_sets = []
+    while not hitting_sets:
+        hitting_sets = exact_hs(sender_observations, m)
+        m += 1
+    return hitting_sets
 
-    minimal_hits = {}
-    for sender, batches in sender_batches.items():
-        print(f"Sender {sender} batches: {batches}")  # Debugging output
-        # Attempt to find a minimal hitting set
-        if batches:
-            union_set = set.union(*batches)
-            intersection_set = set.intersection(*batches)
-            minimal_hits[sender] = (union_set, intersection_set)
-        else:
-            minimal_hits[sender] = (set(), set())
-
-    return minimal_hits
-
-def display_results(minimal_hits):
-    for sender, (union, intersection) in minimal_hits.items():
-        print(f"Sender {sender}: Union of receivers {sorted(union)}, Intersection of receivers {sorted(intersection)}")
+def display_hitting_sets(hitting_sets):
+    for hs in hitting_sets:
+        print(f"Hitting Set: {sorted(hs)}")
 
 def main():
     file_path = r"C:\Users\manue\Downloads\observation_mix.txt"
-    df = load_data(file_path)
-    minimal_hits = minimal_hitting_set(df)
-    display_results(minimal_hits)
+    data = load_data(file_path)
+    
+    for sender in range(1, 11):
+        print(f"\nSender {sender} minimal hitting sets:")
+        hitting_sets = calculate_exact_hs(data, sender)
+        display_hitting_sets(hitting_sets)
 
 if __name__ == "__main__":
     main()
