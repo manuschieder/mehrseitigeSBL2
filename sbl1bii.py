@@ -1,9 +1,8 @@
 import pandas as pd
-import networkx as nx
-import matplotlib.pyplot as plt
 from collections import defaultdict, Counter
 import itertools
 
+# function to load data from the file
 def load_data(file_path):
     data = []
     with open(file_path, 'r') as file:
@@ -14,56 +13,50 @@ def load_data(file_path):
             data.append((senders, receivers))
     return data
 
+# recursive function to find minimal hitting sets
 def exact_hs(observations, m, C=set()):
-    if not observations:
+    if not observations:  # base case: no more observations
         return [C]
-    if m < 1:
+    if m < 1:  # base case: invalid m
         return []
     
     B = observations[0]
     H = []
     for r in B:
+        # create new observations excluding r
         new_obs = [obs for obs in observations if r not in obs]
+        # add r to the current set
         new_C = C | {r}
+        # recurse with updated observations and set
         H += exact_hs(new_obs, m - 1, new_C)
     
     return H
 
+# function to calculate minimal hitting sets for a specific sender
 def calculate_exact_hs(data, sender):
+    # filter observations for the given sender
     sender_observations = [set(receivers) for senders, receivers in data if sender in senders]
     m = 1
     hitting_sets = []
-    while not hitting_sets:
+    while not hitting_sets:  # increment m until hitting sets are found
         hitting_sets = exact_hs(sender_observations, m)
         m += 1
     return hitting_sets
 
-def create_bipartite_graph(hitting_sets, sender):
-    G = nx.Graph()
-    G.add_node(sender, bipartite=0)
-    for hs in hitting_sets:
-        for receiver in hs:
-            G.add_node(receiver, bipartite=1)
-            G.add_edge(sender, receiver)
-    return G
+# function to display a single hitting set
+def display_hitting_set(hitting_sets):
+    if hitting_sets:
+        print(f"Hitting Set: {sorted(hitting_sets[0])}")
 
-def plot_bipartite_graph(G, sender):
-    pos = nx.bipartite_layout(G, [sender])
-    nx.draw(G, pos, with_labels=True, node_color=['skyblue' if node == sender else 'lightgreen' for node in G], edge_color='gray', node_size=500)
-    plt.title(f"Bipartiter Graph für Sender {sender}")
-    plt.show()
-
+# main function to load data and compute hitting sets for each sender
 def main():
     file_path = r"C:\Users\manue\Downloads\observation_mix.txt"
     data = load_data(file_path)
     
     for sender in range(1, 11):
-        print(f"\nSender {sender} minimal hitting sets:")
+        print(f"\nSender {sender} minimal hitting set:")
         hitting_sets = calculate_exact_hs(data, sender)
-        G = create_bipartite_graph(hitting_sets, sender)
-        plot_bipartite_graph(G, sender)
-        for hs in hitting_sets:
-            print(f"Hitting Set: {sorted(hs)}")
+        display_hitting_set(hitting_sets)
 
 if __name__ == "__main__":
     main()
