@@ -61,12 +61,19 @@ def calc_sda(batch_size: int, frequencies: list[tuple[int, list[int]]]) -> list[
     return sda_lists
 
 
-# Returns a list of the most likely contacts
-def get_most_likely_contacts(sda_lists: list[list[float]], num: int) -> list[list[float]]:
+# Returns a list of the n (num) most likely contacts
+def get_most_likely_contacts_number(sda_lists: list[list[float]], n: int) -> list[list[float]]:
     most_likely_contacts = []
     for sender in sda_lists:
         most_likely_contacts.append(list(sorted(enumerate(sender, start=1), key=itemgetter(1)))[
-                                    :-(num + 1):-1])  # -1 for reverse order (most likely contact listed first)
+                                    :-(n + 1):-1])  # -1 for reverse order (most likely contact listed first)
+    return most_likely_contacts
+
+# Returns a list of the most likely contacts
+def get_most_likely_contacts_threshold(sda_lists: list[list[float]], threshold: int) -> list[int]:
+    most_likely_contacts = []
+    for sender in sda_lists:
+        most_likely_contacts.append([(idx, value) for idx, value in list(sorted(enumerate(sender, start=1), key=itemgetter(1))) if value >= threshold])
     return most_likely_contacts
 
 
@@ -116,7 +123,17 @@ print_frequencies(frequencies)
 sda_lists = calc_sda(batch_size, frequencies)
 
 n_contacts = 2
-most_likely_contacts = get_most_likely_contacts(sda_lists, n_contacts)
+most_likely_contacts_number = get_most_likely_contacts_number(sda_lists, n_contacts)
 
-# Prints results, last column are most likely contacts for each sender
-print_sda_results(sda_lists, most_likely_contacts)
+threshold=0.2
+most_likely_contacts_threshold = get_most_likely_contacts_threshold(sda_lists, threshold)
+
+
+# Prints results, last column are 2 most likely contacts for each sender
+print("Selecting contacts by n most likely")
+print_sda_results(sda_lists, most_likely_contacts_number)
+
+print("Selecting contacts by threshold value")
+# Print results with last column being most likely contacts selected by threshold value >= 0.2
+print_sda_results(sda_lists, most_likely_contacts_threshold)
+
